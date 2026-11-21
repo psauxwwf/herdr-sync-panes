@@ -2,8 +2,8 @@
 set -eu
 
 # Keep the release tag and checksum in sync with the published GitHub asset.
-version=v1.1.0
-checksum=3b610028bce5584c2cbd270351d342c0719e2b3a0f00fd2d47f0d2a12fc3b272
+version=v1.2.0
+checksum=6b23d1a88958b5b09a81481388f68f713fbf0290e1c807bbbd48a76eed9fbdf8
 asset=herdr-sync-panes_linux_amd64.tar.gz
 url="https://github.com/psauxwwf/herdr-sync-panes/releases/download/$version/$asset"
 
