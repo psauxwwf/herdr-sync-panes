@@ -62,19 +62,18 @@ func (f *fakeAPI) Send(id, text string) error {
 }
 
 func TestTargetIDs(t *testing.T) {
-	self := herdr.Pane{ID: "control", TabID: "t1", WorkspaceID: "w1"}
+	anchor := herdr.Pane{ID: "a", TabID: "t1", WorkspaceID: "w1"}
 	panes := []herdr.Pane{
-		self, {ID: "b", TabID: "t1", WorkspaceID: "w1"},
-		{ID: "a", TabID: "t1", WorkspaceID: "w1"},
+		anchor, {ID: "b", TabID: "t1", WorkspaceID: "w1"},
 		{ID: "other-tab", TabID: "t2", WorkspaceID: "w1"},
 		{ID: "other-workspace", TabID: "t1", WorkspaceID: "w2"},
 	}
-	got, err := targetIDs(panes, self)
+	got, err := targetIDs(panes, anchor)
 	if err != nil || !reflect.DeepEqual(got, []string{"a", "b"}) {
 		t.Fatalf("got %v, %v", got, err)
 	}
-	if _, err := targetIDs(panes[1:], self); err == nil {
-		t.Fatal("missing control pane must be rejected")
+	if _, err := targetIDs(panes[1:], anchor); err == nil {
+		t.Fatal("missing original pane must be rejected")
 	}
 }
 
@@ -90,13 +89,13 @@ func (r *chunkReader) Read(p []byte) (int, error) {
 }
 
 func TestBroadcastUTF8AndControlKeys(t *testing.T) {
-	self := herdr.Pane{ID: "control", TabID: "t", WorkspaceID: "w"}
+	anchor := herdr.Pane{ID: "a", TabID: "t", WorkspaceID: "w"}
 	api := &fakeAPI{
-		list: []herdr.Pane{self, {ID: "a", TabID: "t", WorkspaceID: "w"}, {ID: "b", TabID: "t", WorkspaceID: "w"}},
+		list: []herdr.Pane{anchor, {ID: "b", TabID: "t", WorkspaceID: "w"}},
 		sent: map[string]string{},
 	}
 	input := &chunkReader{chunks: [][]byte{{'a', 0xd0}, {0xb6, 0x03, 0x1b, '[', 'A', '\r'}, {stopKey}}}
-	err := broadcast(context.Background(), api, input, self, []string{"a", "b"})
+	err := broadcast(context.Background(), api, input, anchor, []string{"a", "b"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,21 +107,30 @@ func TestBroadcastUTF8AndControlKeys(t *testing.T) {
 }
 
 func TestBroadcastStopsOnTargetChange(t *testing.T) {
-	self := herdr.Pane{ID: "control", TabID: "t", WorkspaceID: "w"}
-	api := &fakeAPI{list: []herdr.Pane{self, {ID: "a", TabID: "other", WorkspaceID: "w"}}, sent: map[string]string{}}
-	err := broadcast(context.Background(), api, strings.NewReader("dangerous command\r"), self, []string{"a"})
+	anchor := herdr.Pane{ID: "a", TabID: "t", WorkspaceID: "w"}
+	api := &fakeAPI{list: []herdr.Pane{{ID: "a", TabID: "other", WorkspaceID: "w"}}, sent: map[string]string{}}
+	err := broadcast(context.Background(), api, strings.NewReader("dangerous command\r"), anchor, []string{"a"})
+	if err == nil || len(api.sent) != 0 {
+		t.Fatalf("expected failure without delivery; err=%v sent=%v", err, api.sent)
+	}
+}
+
+func TestBroadcastStopsWhenPaneIsAdded(t *testing.T) {
+	anchor := herdr.Pane{ID: "a", TabID: "t", WorkspaceID: "w"}
+	api := &fakeAPI{list: []herdr.Pane{anchor, {ID: "b", TabID: "t", WorkspaceID: "w"}}, sent: map[string]string{}}
+	err := broadcast(context.Background(), api, strings.NewReader("dangerous command\r"), anchor, []string{"a"})
 	if err == nil || len(api.sent) != 0 {
 		t.Fatalf("expected failure without delivery; err=%v sent=%v", err, api.sent)
 	}
 }
 
 func TestBroadcastReportsPartialFailure(t *testing.T) {
-	self := herdr.Pane{ID: "control", TabID: "t", WorkspaceID: "w"}
+	anchor := herdr.Pane{ID: "a", TabID: "t", WorkspaceID: "w"}
 	api := &fakeAPI{
-		list: []herdr.Pane{self, {ID: "a", TabID: "t", WorkspaceID: "w"}, {ID: "b", TabID: "t", WorkspaceID: "w"}},
+		list: []herdr.Pane{anchor, {ID: "b", TabID: "t", WorkspaceID: "w"}},
 		sent: map[string]string{}, failSend: "b",
 	}
-	err := broadcast(context.Background(), api, strings.NewReader("x"), self, []string{"a", "b"})
+	err := broadcast(context.Background(), api, strings.NewReader("x"), anchor, []string{"a", "b"})
 	if err == nil || !strings.Contains(err.Error(), "some panes may have received") || api.sent["a"] != "x" {
 		t.Fatalf("expected partial delivery warning; err=%v sent=%v", err, api.sent)
 	}

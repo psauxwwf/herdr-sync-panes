@@ -11,7 +11,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// A second control pane in the same tab could otherwise feed the first one.
+// Keep only one broadcaster for a tab, including across plugin invocations.
 func lockTab(tabID string) (func(), error) {
 	dir := os.Getenv("HERDR_PLUGIN_STATE_DIR")
 	if dir == "" {

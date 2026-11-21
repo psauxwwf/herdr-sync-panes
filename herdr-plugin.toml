@@ -17,5 +17,7 @@ command = ["./bin/herdr-sync-panes", "open"]
 [[panes]]
 id = "control"
 title = "SYNC"
-placement = "split"
+placement = "popup"
+width = 6
+height = 4
 command = ["./bin/herdr-sync-panes", "sync"]

@@ -23,53 +23,56 @@ type paneAPI interface {
 	Send(string, string) error
 }
 
-func targetIDs(panes []herdr.Pane, self herdr.Pane) ([]string, error) {
+func targetIDs(panes []herdr.Pane, anchor herdr.Pane) ([]string, error) {
 	var targets []string
 	found := false
 	for _, p := range panes {
-		if p.ID == self.ID && p.TabID == self.TabID && p.WorkspaceID == self.WorkspaceID {
-			found = true
-		} else if p.ID != "" && p.TabID == self.TabID && p.WorkspaceID == self.WorkspaceID {
+		if p.ID != "" && p.TabID == anchor.TabID && p.WorkspaceID == anchor.WorkspaceID {
 			targets = append(targets, p.ID)
+			if p.ID == anchor.ID {
+				found = true
+			}
 		}
 	}
 	if !found {
-		return nil, errors.New("control pane is no longer in its original tab")
+		return nil, errors.New("original pane is no longer in its tab")
 	}
 	sort.Strings(targets)
 	return targets, nil
 }
 
-func Run(ctx context.Context, api paneAPI, input *os.File, output io.Writer, selfID string) error {
-	if selfID == "" {
-		return errors.New("HERDR_PANE_ID is missing; refusing to broadcast")
+func Run(ctx context.Context, api paneAPI, input *os.File, output io.Writer, anchor herdr.Pane) error {
+	if anchor.ID == "" || anchor.TabID == "" || anchor.WorkspaceID == "" {
+		return errors.New("popup context is incomplete; refusing to broadcast")
 	}
 	if !term.IsTerminal(int(input.Fd())) {
 		return errors.New("sync requires an interactive terminal")
 	}
-	self, err := api.Pane(selfID)
+	current, err := api.Pane(anchor.ID)
 	if err != nil {
 		return err
 	}
-	unlock, err := lockTab(self.TabID)
+	if current != anchor {
+		return errors.New("original pane changed tabs; refusing to broadcast")
+	}
+	unlock, err := lockTab(anchor.TabID)
 	if err != nil {
 		return err
 	}
 	defer unlock()
 
-	panes, err := api.Panes(self.WorkspaceID)
+	panes, err := api.Panes(anchor.WorkspaceID)
 	if err != nil {
 		return err
 	}
-	targets, err := targetIDs(panes, self)
+	targets, err := targetIDs(panes, anchor)
 	if err != nil {
 		return err
 	}
 	if len(targets) == 0 {
-		return errors.New("no other panes in this tab")
+		return errors.New("no panes in this tab")
 	}
-	fmt.Fprintf(output, "SYNC ON: input goes to %d pane(s) in this tab.\r\n", len(targets))
-	fmt.Fprint(output, "Ctrl+] stops sync. Input is not shown here.\r\n")
+	fmt.Fprint(output, "SYNC\r\n^]")
 
 	state, err := term.MakeRaw(int(input.Fd()))
 	if err != nil {
@@ -77,10 +80,10 @@ func Run(ctx context.Context, api paneAPI, input *os.File, output io.Writer, sel
 	}
 	defer term.Restore(int(input.Fd()), state)
 
-	return broadcast(ctx, api, input, self, targets)
+	return broadcast(ctx, api, input, anchor, targets)
 }
 
-func broadcast(ctx context.Context, api paneAPI, input io.Reader, self herdr.Pane, targets []string) error {
+func broadcast(ctx context.Context, api paneAPI, input io.Reader, anchor herdr.Pane, targets []string) error {
 	type readResult struct {
 		data []byte
 		err  error
@@ -125,11 +128,11 @@ func broadcast(ctx context.Context, api paneAPI, input io.Reader, self herdr.Pan
 		}
 		pending = remaining
 		if text != "" {
-			current, err := api.Panes(self.WorkspaceID)
+			current, err := api.Panes(anchor.WorkspaceID)
 			if err != nil {
 				return fmt.Errorf("cannot verify target panes; sync stopped: %w", err)
 			}
-			currentTargets, err := targetIDs(current, self)
+			currentTargets, err := targetIDs(current, anchor)
 			if err != nil || strings.Join(currentTargets, "\x00") != strings.Join(targets, "\x00") {
 				return errors.New("panes changed; sync stopped before sending input")
 			}

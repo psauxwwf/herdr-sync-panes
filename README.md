@@ -1,8 +1,8 @@
 # Herdr Sync Panes
 
-A Herdr plugin written in Go for broadcasting terminal input to every other
-pane in the current tab. Herdr 0.9.5 does not expose a hook for keys typed in
-an existing pane, so input is typed into a **separate control pane**.
+A Herdr plugin written in Go for broadcasting terminal input to every pane in
+the current tab. Herdr 0.9.5 does not expose a hook for keys typed in an
+existing pane, so input is typed into a **small control popup**.
 
 ## Install from GitHub
 
@@ -16,6 +16,10 @@ herdr plugin install psauxwwf/herdr-sync-panes
 Herdr checks out the plugin and runs `scripts/install-release.sh`, which
 downloads the pinned `v1.0.0` release, verifies its SHA-256 checksum, and
 installs the binary into the plugin directory.
+
+Release `v1.0.0` still uses the previous split-pane interface. To use the popup
+version, build and link this working tree until a new release is published and
+the installer is updated.
 
 If a local copy is already linked, unlink it first with
 `herdr plugin unlink herdr-sync-panes`.
@@ -53,17 +57,19 @@ Alternatively, start it without a binding:
 herdr plugin action invoke herdr-sync-panes.start
 ```
 
-The action opens a split control pane in the focused pane's tab. Everything
-typed into it is sent to all other panes in that tab; nothing is echoed in the
-control pane. **Ctrl+]** stops synchronization and closes the control pane.
-Herdr's own keybindings may intercept keys before the control pane receives
-them. Target programs can interpret the same keys differently.
+The action opens a centered 6×4 control popup without changing the pane layout.
+Everything typed into it is sent to every pane in the current tab; nothing is
+echoed in the popup. **Ctrl+]** stops synchronization and closes the popup.
+Herdr popups receive all keyboard input, including Herdr shortcuts, while
+open. Target programs can interpret the same keys differently.
 
 The target set is fixed when sync starts. If a pane is added, removed, or moved,
 sync stops before sending the next input. Only one sync session per tab is
 allowed. If delivery fails midway, some panes may already have received the
-input; the control pane displays an error. Commands and passwords are sent to
-every target: use with care.
+input. On an error, the popup displays `ERR` and `ENT`; press Enter to close it.
+Details are appended to `errors.log` in Herdr's plugin state directory when
+available.
+Commands and passwords are sent to every target: use with care.
 
 ## Development
 
