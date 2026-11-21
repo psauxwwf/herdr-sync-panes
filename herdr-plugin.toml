@@ -1,6 +1,6 @@
 id = "herdr-sync-panes"
 name = "Sync Panes"
-version = "1.2.0"
+version = "1.3.0"
 min_herdr_version = "0.9.5"
 description = "Broadcast terminal input from a control pane to the current tab"
 platforms = ["linux"]

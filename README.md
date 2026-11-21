@@ -14,11 +14,11 @@ herdr plugin install psauxwwf/herdr-sync-panes
 ```
 
 Herdr checks out the plugin and runs `scripts/install-release.sh`, which
-downloads the pinned `v1.2.0` release, verifies its SHA-256 checksum, and
+downloads the pinned `v1.3.0` release, verifies its SHA-256 checksum, and
 installs the binary into the plugin directory.
 
-The existing `v1.2.0` Git tag still points to an installer pinned to `v1.1.0`;
-install from the default branch to get the `v1.2.0` binary.
+The existing `v1.3.0` Git tag still points to an installer pinned to `v1.2.0`;
+install from the default branch to get the `v1.3.0` binary.
 
 If a local copy is already linked, unlink it first with
 `herdr plugin unlink herdr-sync-panes`.
@@ -56,7 +56,7 @@ Alternatively, start it without a binding:
 herdr plugin action invoke herdr-sync-panes.start
 ```
 
-The action opens a centered 11×4 control popup without changing the pane layout.
+The action opens a centered 9×4 control popup without changing the pane layout.
 Everything typed into it is sent to every pane in the current tab; nothing is
 echoed in the popup. **Ctrl+]** stops synchronization and closes the popup.
 Herdr popups receive all keyboard input, including Herdr shortcuts, while
@@ -84,6 +84,7 @@ After publishing a new release, update `version` and `checksum` in
 `scripts/install-release.sh` and the version in `herdr-plugin.toml`, then
 commit and push those changes. Installation from a Git ref uses the installer
 at that ref; the existing `v1.0.0` tag still contains the old Go build step,
-the `v1.1.0` tag pins the `v1.0.0` binary, and the `v1.2.0` tag pins `v1.1.0`.
+the `v1.1.0` tag pins the `v1.0.0` binary, the `v1.2.0` tag pins `v1.1.0`,
+and the `v1.3.0` tag pins `v1.2.0`.
 
 To unregister a linked plugin, use `herdr plugin unlink herdr-sync-panes`.
