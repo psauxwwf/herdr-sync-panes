@@ -1,12 +1,12 @@
 id = "herdr-sync-panes"
 name = "Sync Panes"
-version = "0.1.0"
+version = "1.0.0"
 min_herdr_version = "0.9.5"
 description = "Broadcast terminal input from a control pane to the current tab"
-platforms = ["linux", "macos"]
+platforms = ["linux"]
 
 [[build]]
-command = ["go", "build", "-o", "bin/herdr-sync-panes", "./cmd/herdr-sync-panes"]
+command = ["sh", "scripts/install-release.sh"]
 
 [[actions]]
 id = "start"

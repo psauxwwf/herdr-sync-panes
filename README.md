@@ -4,10 +4,21 @@ A Herdr plugin written in Go for broadcasting terminal input to every other
 pane in the current tab. Herdr 0.9.5 does not expose a hook for keys typed in
 an existing pane, so input is typed into a **separate control pane**.
 
-## Requirements
+## Install from GitHub
 
-- Herdr 0.9.5 or newer, on Linux or macOS.
-- Go 1.23 or newer to build.
+The published binary supports **Linux amd64**. Installation requires Herdr
+0.9.5 or newer, Git, curl, tar, and sha256sum; Go is not needed.
+
+```sh
+herdr plugin install psauxwwf/herdr-sync-panes
+```
+
+Herdr checks out the plugin and runs `scripts/install-release.sh`, which
+downloads the pinned `v1.0.0` release, verifies its SHA-256 checksum, and
+installs the binary into the plugin directory.
+
+If a local copy is already linked, unlink it first with
+`herdr plugin unlink herdr-sync-panes`.
 
 ## Build and link locally
 
@@ -16,8 +27,9 @@ go build -o bin/herdr-sync-panes ./cmd/herdr-sync-panes
 herdr plugin link "$PWD"
 ```
 
-`herdr plugin link` does not run the manifest's build step; rebuild after
-changing the Go code. Linking changes the current Herdr installation.
+Building locally requires Go 1.23 or newer. `herdr plugin link` does not run the
+manifest's install step; rebuild after changing the Go code. Linking changes
+the current Herdr installation.
 
 Add a binding of your choice to `~/.config/herdr/config.toml`:
 
@@ -63,5 +75,9 @@ task build
 
 `task build-linux` produces a static Linux amd64 binary. `task release
 VERSION=<tag>` packages that binary and publishes a GitHub release.
+After publishing a new release, update `version` and `checksum` in
+`scripts/install-release.sh` and the version in `herdr-plugin.toml`, then
+commit and push those changes. Installation from a Git ref uses the installer
+at that ref; the existing `v1.0.0` tag still contains the old Go build step.
 
 To unregister a linked plugin, use `herdr plugin unlink herdr-sync-panes`.
