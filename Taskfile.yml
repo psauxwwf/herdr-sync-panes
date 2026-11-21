@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  GOBIN: go
+  BIN: "{{.ROOT_DIR}}/bin"
+  APP: herdr-sync-panes
+  APP_BIN: "{{.BIN}}/{{.APP}}"
+  REPO_NAME:
+    sh: basename "{{.ROOT_DIR}}"
+  RELEASE_DIR: "{{.BIN}}/linux_amd64"
+  RELEASE_LINUX_ARCHIVE: "{{.BIN}}/{{.REPO_NAME}}_linux_amd64.tar.gz"
+  LDFLAGS: "-w -s -buildid="
+
+tasks:
+  setup:
+    desc: Set up the build directory
+    internal: true
+    silent: true
+    cmds:
+      - mkdir -p "{{.BIN}}"
+
+  check:
+    desc: Run Go static analysis
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - "{{.GOBIN}} vet ./..."
+
+  test:
+    desc: Run Go tests
+    dir: "{{.ROOT_DIR}}"
+    deps: [check]
+    cmds:
+      - "{{.GOBIN}} test -race ./..."
+
+  build:
+    desc: Build the plugin for the current platform
+    dir: "{{.ROOT_DIR}}"
+    deps: [setup]
+    cmds:
+      - "{{.GOBIN}} build -trimpath -o '{{.APP_BIN}}' ./cmd/{{.APP}}"
+
+  build-linux:
+    desc: Build a static Linux amd64 release binary
+    dir: "{{.ROOT_DIR}}"
+    deps: [setup]
+    env:
+      CGO_ENABLED: "0"
+      GOARCH: amd64
+      GOOS: linux
+    cmds:
+      - mkdir -p "{{.RELEASE_DIR}}"
+      - "{{.GOBIN}} build -trimpath -ldflags='{{.LDFLAGS}}' -o '{{.RELEASE_DIR}}/{{.APP}}' ./cmd/{{.APP}}"
+
+  release:
+    desc: Build and publish a GitHub release
+    dir: "{{.ROOT_DIR}}"
+    requires:
+      vars: [VERSION]
+    deps: [build-linux]
+    cmds:
+      - tar -czf "{{.RELEASE_LINUX_ARCHIVE}}" -C "{{.RELEASE_DIR}}" "{{.APP}}"
+      - gh release create "{{.VERSION}}" "{{.RELEASE_LINUX_ARCHIVE}}" --target "$(git rev-parse HEAD)" --generate-notes
