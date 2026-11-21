@@ -72,7 +72,8 @@ func Run(ctx context.Context, api paneAPI, input *os.File, output io.Writer, anc
 	if len(targets) == 0 {
 		return errors.New("no panes in this tab")
 	}
-	fmt.Fprint(output, "STOP ^]")
+	fmt.Fprint(output, "\x1b[?25lSTOP^]")
+	defer fmt.Fprint(output, "\x1b[?25h")
 
 	state, err := term.MakeRaw(int(input.Fd()))
 	if err != nil {

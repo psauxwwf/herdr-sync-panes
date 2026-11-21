@@ -18,6 +18,6 @@ command = ["./bin/herdr-sync-panes", "open"]
 id = "control"
 title = "SYNC"
 placement = "popup"
-width = 11
+width = 9
 height = 4
 command = ["./bin/herdr-sync-panes", "sync"]

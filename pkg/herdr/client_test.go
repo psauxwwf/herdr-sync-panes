@@ -46,7 +46,7 @@ func TestSocketAPI(t *testing.T) {
 				}
 			case "plugin.pane.open":
 				env, ok := req.Params["env"].(map[string]any)
-				if req.Params["placement"] != "popup" || req.Params["width"] != float64(11) ||
+				if req.Params["placement"] != "popup" || req.Params["width"] != float64(9) ||
 					req.Params["height"] != float64(4) || !ok || env["HERDR_SYNC_EXPECTED_PANE_ID"] != "self" {
 					t.Errorf("unexpected open params: %v", req.Params)
 				}
