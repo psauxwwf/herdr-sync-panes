@@ -56,7 +56,7 @@ Alternatively, start it without a binding:
 herdr plugin action invoke herdr-sync-panes.start
 ```
 
-The action opens a centered 6×4 control popup without changing the pane layout.
+The action opens a centered 11×4 control popup without changing the pane layout.
 Everything typed into it is sent to every pane in the current tab; nothing is
 echoed in the popup. **Ctrl+]** stops synchronization and closes the popup.
 Herdr popups receive all keyboard input, including Herdr shortcuts, while

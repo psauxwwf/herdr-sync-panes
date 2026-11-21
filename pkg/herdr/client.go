@@ -92,7 +92,7 @@ func (c Client) Send(id, text string) error {
 func (c Client) Open(target string) error {
 	return c.call("plugin.pane.open", map[string]any{
 		"plugin_id": "herdr-sync-panes", "entrypoint": "control",
-		"placement": "popup", "width": 6, "height": 4,
+		"placement": "popup", "width": 11, "height": 4,
 		"env": map[string]string{"HERDR_SYNC_EXPECTED_PANE_ID": target},
 	}, nil)
 }
